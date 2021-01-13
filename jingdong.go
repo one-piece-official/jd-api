@@ -3,16 +3,18 @@ package jingdong
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/fatih/structs"
-	"github.com/google/go-querystring/query"
-	"github.com/one-piece-official/jd-api/dto"
-	"github.com/one-piece-official/jd-api/utils"
 	"io/ioutil"
 	"net/http"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/fatih/structs"
+	"github.com/google/go-querystring/query"
+	"github.com/one-piece-official/jd-api/dto"
+	"github.com/one-piece-official/jd-api/utils"
 )
 
 const (
@@ -27,14 +29,14 @@ type QueryRequest interface {
 }
 
 type Client struct {
-	appID string
+	appID     string
 	appSecret string
 }
 
 // NewClient 初始化京东客户端.
 func NewClient(key, secret string) *Client {
 	return &Client{
-		appID: key,
+		appID:     key,
 		appSecret: secret,
 	}
 }
@@ -45,13 +47,13 @@ func (c *Client) Query(req QueryRequest, response interface{}) (err error) {
 		return err
 	}
 
-	fmt.Printf("bizContentStr is:%s\n", bizContentStr)
+	// fmt.Printf("bizContentStr is:%s\n", bizContentStr)
 
 	params := dto.RequestBody{
 		AppID:     c.appID,
 		Format:    format,
 		Timestamp: time.Now().Format("2006-01-02 15:04:05"),
-		//Timestamp: "2021-01-12 11:07:41",
+		// Timestamp: "11",
 		Version:   version,
 		SignType:  signType,
 		Method:    req.GetMethod(),
@@ -60,18 +62,18 @@ func (c *Client) Query(req QueryRequest, response interface{}) (err error) {
 
 	signString := c.appSecret + composeParameterString(params) + c.appSecret
 
-	fmt.Printf("sign string is:%s\n\n", signString)
+	// fmt.Printf("sign string is:%s\n\n", signString)
 	sign := strings.ToUpper(utils.MD5(signString))
 	params.Sign = sign
 
-	fmt.Printf("sign is:%s\n\n", sign)
+	// fmt.Printf("sign is:%s\n\n", sign)
 
 	httpClient := http.DefaultClient
 
 	v, _ := query.Values(&params)
 	requestURL := fmt.Sprintf("%s?%s", gatewayURL, v.Encode())
 
-	fmt.Printf("requestURL is %s\n", requestURL)
+	// fmt.Printf("requestURL is %s\n", requestURL)
 	resp, err := utils.MakeHTTPClientGet(httpClient, requestURL, bytes.NewBuffer(nil))
 	if err != nil {
 		return
@@ -84,9 +86,20 @@ func (c *Client) Query(req QueryRequest, response interface{}) (err error) {
 		return
 	}
 
-	//fmt.Println(bytes.NewBuffer(resByte))
+	// fmt.Println(bytes.NewBuffer(resByte))
 
-	if err = json.Unmarshal(resByte, &response); err != nil {
+	var res dto.ResponseBody
+	if err = json.Unmarshal(resByte, &res); err != nil {
+		return fmt.Errorf("query json unmarshal failed: %w", err)
+	}
+
+	if !res.Success() {
+		err := errors.New("jd rta response is failed")
+
+		return fmt.Errorf("%w", err)
+	}
+
+	if err = json.Unmarshal([]byte(res.Data.Result), &response); err != nil {
 		return fmt.Errorf("query json unmarshal failed: %w", err)
 	}
 
