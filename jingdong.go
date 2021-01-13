@@ -24,6 +24,8 @@ const (
 	gatewayURL = "https://router.jd.com/api"
 )
 
+var errJDRtaRespFailed = errors.New("jd rta response is failed")
+
 type QueryRequest interface {
 	GetMethod() string
 }
@@ -86,7 +88,7 @@ func (c *Client) Query(req QueryRequest, response interface{}) (err error) {
 		return
 	}
 
-	// fmt.Println(bytes.NewBuffer(resByte))
+	fmt.Println(bytes.NewBuffer(resByte))
 
 	var res dto.ResponseBody
 	if err = json.Unmarshal(resByte, &res); err != nil {
@@ -94,9 +96,7 @@ func (c *Client) Query(req QueryRequest, response interface{}) (err error) {
 	}
 
 	if !res.Success() {
-		err := errors.New("jd rta response is failed")
-
-		return fmt.Errorf("%w", err)
+		return fmt.Errorf("%w", errJDRtaRespFailed)
 	}
 
 	if err = json.Unmarshal([]byte(res.Data.Result), &response); err != nil {
@@ -116,6 +116,7 @@ func composeParameterString(params dto.RequestBody) (signString string) {
 	for k, v := range requestDataMap {
 		keys = append(keys, fmt.Sprintf(`%s%s`, k, v))
 	}
+
 	sort.Strings(keys)
 	signString = strings.Join(keys, "")
 

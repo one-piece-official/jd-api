@@ -10,7 +10,7 @@ type ResponseBody struct {
 type JdUnionOpenUserRegisterValidateResponse struct {
 	Code int `json:"code"`
 	Data struct {
-		UserRes UserRes
+		UserRes UserRes `json:"userResp"`
 	} `json:"data"`
 	Message   string `json:"message"`
 	RequestID string `json:"requestId"`
@@ -21,7 +21,7 @@ type UserRes struct {
 }
 
 // 1、京东注册用户 ，2、非京东注册用户（包括未查询到身份的用户）.
-func (resp *JdUnionOpenUserRegisterValidateResponse) Available() bool {
+func (resp *JdUnionOpenUserRegisterValidateResponse) Registered() bool {
 	return resp.Data.UserRes.JdUser == 1
 }
 
