@@ -3,6 +3,7 @@ package dto
 type RequestBody struct {
 	// 公共参数
 	AppID     string `json:"app_key" url:"app_key" structs:"app_key"`             // 联盟分配 app key
+	//AccessToken string  `json:"access_token" url:"access_token" structs:"access_token"` // 此参数不需要传
 	Format    string `json:"format" url:"format" structs:"format"`                // 格式
 	Method    string `json:"method" url:"method" structs:"method"`                // 接口名称
 	SignType  string `json:"sign_method" url:"sign_method" structs:"sign_method"` // 生成签名的算法
@@ -18,8 +19,8 @@ type UserAccountDeviceInfoRequest struct {
 }
 
 type UserStateReq struct {
-	UserIDType string `json:"userIdType"` // 设备类型
 	UserID     string `json:"userId"`     // 设备号
+	UserIDType string `json:"userIdType"` // 设备类型
 }
 
 func (req *UserAccountDeviceInfoRequest) GetMethod() string {

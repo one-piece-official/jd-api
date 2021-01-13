@@ -5,15 +5,21 @@ type ResponseBody struct {
 }
 
 type JdUnionOpenUserRegisterValidateResponse struct {
-	ValidateResult ValidateResult `json:"validateResult"`
+	Result string `json:"result"`
+	Code   string `json:"code"`
 }
 
 type ValidateResult struct {
-	Message string `json:"message"`
-	Data    struct {
+	Code int `json:"code"`
+	Data struct {
 		UserResp struct {
-			JdUser string `json:"jdUser"`
+			JdUser int `json:"jdUser"`
 		} `json:"userResp"`
 	} `json:"data"`
-	Code string `json:"code"`
+	Message   string `json:"message"`
+	RequestID string `json:"requestId"`
+}
+
+func (r *JdUnionOpenUserRegisterValidateResponse) Success() bool {
+	return r.Code == "0"
 }

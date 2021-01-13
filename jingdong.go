@@ -4,16 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/fatih/structs"
+	"github.com/google/go-querystring/query"
+	"github.com/one-piece-official/jd-api/dto"
+	"github.com/one-piece-official/jd-api/utils"
 	"io/ioutil"
 	"net/http"
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/fatih/structs"
-	"github.com/google/go-querystring/query"
-	"github.com/one-piece-official/jd-api/dto"
-	"github.com/one-piece-official/jd-api/utils"
 )
 
 const (
@@ -29,12 +28,14 @@ type QueryRequest interface {
 
 type Client struct {
 	appID string
+	appSecret string
 }
 
 // NewClient 初始化京东客户端.
-func NewClient(key string) *Client {
+func NewClient(key, secret string) *Client {
 	return &Client{
 		appID: key,
+		appSecret: secret,
 	}
 }
 
@@ -50,17 +51,20 @@ func (c *Client) Query(req QueryRequest, response interface{}) (err error) {
 		AppID:     c.appID,
 		Format:    format,
 		Timestamp: time.Now().Format("2006-01-02 15:04:05"),
+		//Timestamp: "2021-01-12 11:07:41",
 		Version:   version,
 		SignType:  signType,
 		Method:    req.GetMethod(),
 		ParamJSON: bizContentStr,
 	}
 
-	signString := composeParameterString(params)
+	signString := c.appSecret + composeParameterString(params) + c.appSecret
 
-	fmt.Printf("sign is:%s\n\n", signString)
-	sign := utils.MD5(signString)
+	fmt.Printf("sign string is:%s\n\n", signString)
+	sign := strings.ToUpper(utils.MD5(signString))
 	params.Sign = sign
+
+	fmt.Printf("sign is:%s\n\n", sign)
 
 	httpClient := http.DefaultClient
 
@@ -80,7 +84,7 @@ func (c *Client) Query(req QueryRequest, response interface{}) (err error) {
 		return
 	}
 
-	fmt.Println(bytes.NewBuffer(resByte))
+	//fmt.Println(bytes.NewBuffer(resByte))
 
 	if err = json.Unmarshal(resByte, &response); err != nil {
 		return fmt.Errorf("query json unmarshal failed: %w", err)
@@ -101,8 +105,6 @@ func composeParameterString(params dto.RequestBody) (signString string) {
 	}
 	sort.Strings(keys)
 	signString = strings.Join(keys, "")
-	// TODO: 把appSecret的值拼接在字符串的两端
-	// signString = t.config.Secretkey + signString + t.config.Secretkey
 
 	return signString
 }
